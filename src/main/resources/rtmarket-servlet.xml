@@ -1,0 +1,111 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+	   xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	   xmlns:p="http://www.springframework.org/schema/p"
+	   xmlns:context="http://www.springframework.org/schema/context"
+	   xmlns:mvc="http://www.springframework.org/schema/mvc"
+	   xmlns:jpa="http://www.springframework.org/schema/data/jpa"
+	   xmlns:tx="http://www.springframework.org/schema/tx"
+	   xsi:schemaLocation="
+        http://www.springframework.org/schema/beans
+        http://www.springframework.org/schema/beans/spring-beans.xsd
+        http://www.springframework.org/schema/context
+        http://www.springframework.org/schema/context/spring-context.xsd
+        http://www.springframework.org/schema/mvc
+        http://www.springframework.org/schema/mvc/spring-mvc.xsd
+        http://www.springframework.org/schema/data/jpa
+        http://www.springframework.org/schema/data/jpa/spring-jpa.xsd
+        http://www.springframework.org/schema/tx
+        http://www.springframework.org/schema/tx/spring-tx.xsd">
+
+	<!-- 激活@Controller模式 -->
+	<mvc:annotation-driven />
+	<!-- 对包中的所有类进行扫描，以完成Bean创建和自动依赖注入的功能 需要更改 -->
+	<context:component-scan base-package="cn.sunline.rtmarket.web" />
+	<context:component-scan base-package="cn.sunline.rtmarket.service" />
+	<context:component-scan base-package="cn.sunline.rtmarket.dao" />
+
+	<context:property-placeholder location="classpath:system.properties"/>
+
+	<bean
+		class="org.springframework.web.servlet.mvc.annotation.AnnotationMethodHandlerAdapter" />
+
+	<bean id="viewResolver"
+		class="org.springframework.web.servlet.view.InternalResourceViewResolver">
+		<property name="prefix">
+			<value>/jsp/</value>
+		</property>
+		<property name="suffix">
+			<value>.jsp</value>
+		</property>
+	</bean>
+
+	<jpa:repositories base-package="cn.sunline.rtmarket.dao"
+		entity-manager-factory-ref="entityManagerFactory"
+		transaction-manager-ref="transactionManager" />
+
+	<!-- 数据源配置, 使用DBCP数据库连接池 -->
+	<bean id="dataSource" class="org.apache.commons.dbcp.BasicDataSource"
+		destroy-method="close">
+		<!-- Connection Info -->
+		<property name="driverClassName" value="${jdbc.driverClassName}" />
+		<property name="url"
+			value="${jdbc.url}" />
+		<property name="username" value="${jdbc.username}" />
+		<property name="password" value="${jdbc.password}" />
+
+		<!-- Connection Pooling Info -->
+		<property name="maxActive" value="40" />
+		<property name="maxIdle" value="5" />
+		<property name="defaultAutoCommit" value="false" />
+		<!-- 连接Idle一个小时后超时 -->
+		<property name="timeBetweenEvictionRunsMillis" value="3600000" />
+		<property name="minEvictableIdleTimeMillis" value="3600000" />
+	</bean>
+
+	<!-- JPA实体管理工厂的配置 -->
+	<bean id="entityManagerFactory"
+		class="org.springframework.orm.jpa.LocalContainerEntityManagerFactoryBean">
+		<property name="dataSource" ref="dataSource" />
+		<property name="jpaVendorAdapter" ref="hibernateJpaVendorAdapter" />
+		<property name="packagesToScan" value="cn.sunline.rtmarket.entity" /><!--待扫描的实体类包，不再需要persistence.xml了 -->
+		<property name="jpaProperties">
+			<props>
+				<prop key="hibernate.ejb.naming_strategy">org.hibernate.cfg.ImprovedNamingStrategy</prop>
+				<prop key="hibernate.show_sql">true</prop>
+			</props>
+		</property>
+	</bean>
+
+	<!--指定实现JPA的适配器 -->
+	<bean id="hibernateJpaVendorAdapter"
+		class="org.springframework.orm.jpa.vendor.HibernateJpaVendorAdapter">
+		<property name="databasePlatform" value="org.hibernate.dialect.MySQLDialect" />
+	</bean>
+
+	<!-- Jpa 事务配置 -->
+	<bean id="transactionManager" class="org.springframework.orm.jpa.JpaTransactionManager">
+		<property name="entityManagerFactory" ref="entityManagerFactory" />
+	</bean>
+	<tx:annotation-driven transaction-manager="transactionManager"
+		proxy-target-class="true" />
+	<!-- <tx:advice id="txAdvice" transaction-manager="transactionManager"> 
+		<tx:attributes> <tx:method name="save*" propagation="REQUIRED" /> <tx:method 
+		name="add*" propagation="REQUIRED" /> <tx:method name="create*" propagation="REQUIRED" 
+		/> <tx:method name="insert*" propagation="REQUIRED" /> <tx:method name="update*" 
+		propagation="REQUIRED" /> <tx:method name="merge*" propagation="REQUIRED" 
+		/> <tx:method name="del*" propagation="REQUIRED" /> <tx:method name="remove*" 
+		propagation="REQUIRED" /> <tx:method name="put*" propagation="REQUIRED" /> 
+		<tx:method name="get*" propagation="SUPPORTS" read-only="true" /> <tx:method 
+		name="count*" propagation="SUPPORTS" read-only="true" /> <tx:method name="find*" 
+		propagation="SUPPORTS" read-only="true" /> <tx:method name="list*" propagation="SUPPORTS" 
+		read-only="true" /> <tx:method name="*" propagation="SUPPORTS" read-only="true" 
+		/> <tx:method name="batchSaveOrUpdate" propagation="REQUIRES_NEW" /> </tx:attributes> 
+		</tx:advice> <aop:config> <aop:pointcut id="txPointcut" expression="execution(* 
+		cn.sunline.spider.service.*.*(..))" /> <aop:advisor advice-ref="txAdvice" 
+		pointcut-ref="txPointcut" /> </aop:config> -->
+	<!-- JSR303 Validator定义 -->
+	<bean id="validator"
+		class="org.springframework.validation.beanvalidation.LocalValidatorFactoryBean" />
+
+</beans> 
